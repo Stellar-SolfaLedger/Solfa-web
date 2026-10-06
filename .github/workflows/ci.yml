@@ -19,11 +19,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Install dependencies
         run: |
-          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps --ignore-scripts
 
       - name: Run Jest test suite
         run: |
@@ -33,7 +32,9 @@ jobs:
         run: |
           npm run build
         env:
+          NODE_ENV: "production"
+          NEXT_TELEMETRY_DISABLED: "1"
           NEXT_PUBLIC_STELLAR_NETWORK: "TESTNET"
           NEXT_PUBLIC_RPC_URL: "https://soroban-testnet.stellar.org"
-          NEXT_PUBLIC_CONTRACT_ID: "CAWY3OQG5R6W5H32YUS2W3J2A3NZZUUS3G6C5Y667L7BWWK3W76KOG6V"
+          NEXT_PUBLIC_CONTRACT_ID: "CAAU3BUYOH7464VPCE26ONCSHQRR3O6VLR7SVN5UPDK4ZLMT47EW2Q33"
           NEXT_PUBLIC_API_URL: "http://localhost:8000"
