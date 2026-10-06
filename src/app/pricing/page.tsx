@@ -8,16 +8,24 @@ import { CreditPackCard } from "@/components/pricing/CreditPackCard";
 import { SUBSCRIPTION_PLANS, SUPPORTED_TOKENS } from "@/config/stellar";
 import { toStroops } from "@/utils/pricing";
 import { executeSubscribe, executeBuyCredits } from "@/stellar/payments";
+import { executeAddTrustline } from "@/stellar/trustline";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function PricingPage() {
+  const { userAddress: authAddress } = useAuth();
   const [selectedToken, setSelectedToken] = useState<string>("XLM");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [trustlinePrompt, setTrustlinePrompt] = useState<{
+    symbol: string;
+    issuer: string;
+  } | null>(null);
+
+  const activeAddress = authAddress || "GCATRF5LE7EWYOA55FIDRDB2UR76NYXOQ4CINGCTAD5RSGJODAGPQA7J";
 
   // Pricing constants in base token units
   // Plan 1 (Monthly Basic): 10 XLM = 100_000_000 stroops, or 5 USDC = 50_000_000 stroops
   // Plan 2 (Pro Unlimited): 30 XLM = 300_000_000 stroops, or 15 USDC = 150_000_000 stroops
-  // Credit unit: 1 XLM per credit, or 0.5 USDC
   const planPrices: Record<number, Record<string, bigint>> = {
     1: {
       XLM: toStroops(10),
@@ -33,16 +41,40 @@ export default function PricingPage() {
 
   const creditPacks = [
     { credits: 5, multiplier: 5 },
-    { credits: 20, multiplier: 18 }, // slight volume discount
+    { credits: 20, multiplier: 18 }, // volume discount
     { credits: 50, multiplier: 40 }, // bigger volume discount
   ];
+
+  const handleAddTrustlineNow = async () => {
+    if (!trustlinePrompt) return;
+    try {
+      setLoadingAction("add_trustline");
+      setStatusMessage(null);
+      const res = await executeAddTrustline(
+        activeAddress,
+        trustlinePrompt.symbol,
+        trustlinePrompt.issuer,
+        "Freighter"
+      );
+
+      if (res.success) {
+        setStatusMessage(`✅ Trustline to ${trustlinePrompt.symbol} successfully created! Tx: ${res.hash?.slice(0, 16)}...`);
+        setTrustlinePrompt(null);
+      } else {
+        alert(res.error || "Failed to establish trustline.");
+      }
+    } finally {
+      setLoadingAction(null);
+    }
+  };
 
   const handleSubscribe = async (planId: number) => {
     try {
       setLoadingAction(`sub_${planId}`);
       setStatusMessage(null);
+      setTrustlinePrompt(null);
       const res = await executeSubscribe(
-        "GCATRF5LE7EWYOA55FIDRDB2UR76NYXOQ4CINGCTAD5RSGJODAGPQA7J",
+        activeAddress,
         planId,
         selectedToken,
         "Freighter"
@@ -50,6 +82,11 @@ export default function PricingPage() {
 
       if (res.success) {
         setStatusMessage(`🎉 Subscription confirmed on Soroban! Tx: ${res.txHash?.slice(0, 16)}...`);
+      } else if (res.needsTrustline) {
+        const tokenConfig = SUPPORTED_TOKENS[selectedToken];
+        if (tokenConfig && tokenConfig.issuer) {
+          setTrustlinePrompt({ symbol: tokenConfig.symbol, issuer: tokenConfig.issuer });
+        }
       } else {
         alert(res.error || "Subscription failed");
       }
@@ -62,8 +99,9 @@ export default function PricingPage() {
     try {
       setLoadingAction(`credit_${creditsCount}`);
       setStatusMessage(null);
+      setTrustlinePrompt(null);
       const res = await executeBuyCredits(
-        "GCATRF5LE7EWYOA55FIDRDB2UR76NYXOQ4CINGCTAD5RSGJODAGPQA7J",
+        activeAddress,
         creditsCount,
         selectedToken,
         "Freighter"
@@ -71,6 +109,11 @@ export default function PricingPage() {
 
       if (res.success) {
         setStatusMessage(`🎉 Credits added to your Soroban account! Tx: ${res.txHash?.slice(0, 16)}...`);
+      } else if (res.needsTrustline) {
+        const tokenConfig = SUPPORTED_TOKENS[selectedToken];
+        if (tokenConfig && tokenConfig.issuer) {
+          setTrustlinePrompt({ symbol: tokenConfig.symbol, issuer: tokenConfig.issuer });
+        }
       } else {
         alert(res.error || "Failed to buy credits");
       }
@@ -103,7 +146,10 @@ export default function PricingPage() {
             {Object.keys(SUPPORTED_TOKENS).map((sym) => (
               <button
                 key={sym}
-                onClick={() => setSelectedToken(sym)}
+                onClick={() => {
+                  setSelectedToken(sym);
+                  setTrustlinePrompt(null);
+                }}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   selectedToken === sym
                     ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105"
@@ -114,6 +160,25 @@ export default function PricingPage() {
               </button>
             ))}
           </div>
+
+          {/* Trustline Action Required Banner */}
+          {trustlinePrompt && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in">
+              <div className="flex items-center space-x-2 text-left">
+                <span className="text-lg">⚠️</span>
+                <span>
+                  Trustline required for <strong>{trustlinePrompt.symbol}</strong> before making payment.
+                </span>
+              </div>
+              <button
+                onClick={handleAddTrustlineNow}
+                disabled={loadingAction === "add_trustline"}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs shadow-md transition-all whitespace-nowrap"
+              >
+                {loadingAction === "add_trustline" ? "Signing Trustline..." : `Add ${trustlinePrompt.symbol} Trustline (1-Click)`}
+              </button>
+            </div>
+          )}
 
           {statusMessage && (
             <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium animate-fade-in">

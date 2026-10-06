@@ -137,3 +137,11 @@ To point `solfa-web` to Stellar Public Mainnet:
 2. Update `NEXT_PUBLIC_RPC_URL="https://mainnet.sorobanrpc.com"` (or an RPC provider like QuickNode / Blockdaemon).
 3. Set `NEXT_PUBLIC_CONTRACT_ID` to your Mainnet Soroban deployment.
 4. Set Circle USDC Mainnet SAC (`CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75`).
+
+---
+
+## Web3 & Soroban Integration Features
+
+- **Genuine Soroban Transaction Envelopes**: `buildSubscribeTransaction` and `buildBuyCreditsTransaction` use `@stellar/stellar-sdk`'s `Contract.call` to assemble standard transaction envelopes for `subscribe` and `buy_credits`.
+- **1-Click Trustline Flow**: When paying with non-native assets (Circle USDC or USDT), missing trustlines trigger a 1-click action prompt that builds, signs, and broadcasts a Stellar `ChangeTrust` operation.
+- **Universal Multi-Wallet Routing**: Seamlessly interfaces with Freighter, Albedo Web Auth, xBull SDK, and Rabet with automated provider detection and transaction signature routing.

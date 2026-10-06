@@ -22,7 +22,7 @@ export const env: AppConfig = {
   horizonUrl: process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon-testnet.stellar.org",
   paymentsContractId:
     process.env.NEXT_PUBLIC_CONTRACT_ID ||
-    "CAWY3OQG5R6W5H32YUS2W3J2A3NZZUUS3G6C5Y667L7BWWK3W76KOG6V",
+    "CAAU3BUYOH7464VPCE26ONCSHQRR3O6VLR7SVN5UPDK4ZLMT47EW2Q33",
   apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
   isTestnet: (process.env.NEXT_PUBLIC_STELLAR_NETWORK || "TESTNET") !== "PUBLIC",
 };

@@ -63,20 +63,70 @@ export const SUPPORTED_WALLETS: WalletOption[] = [
  * Connect to user wallet and fetch active public key and network.
  */
 export async function connectWalletProvider(walletId: WalletType): Promise<ConnectedWallet> {
-  // If browser extension like Freighter is present
-  if (typeof window !== "undefined" && (window as any).freighter && walletId === "freighter") {
-    try {
-      const isConnected = await (window as any).freighter.isConnected();
-      if (isConnected) {
-        const address = await (window as any).freighter.getPublicKey();
-        return {
-          address,
-          walletName: "Freighter",
-          balanceXlm: "100.0",
-        };
+  if (typeof window !== "undefined") {
+    // 1. Freighter Extension
+    if (walletId === "freighter" && (window as any).freighter) {
+      try {
+        const isConnected = await (window as any).freighter.isConnected();
+        if (isConnected) {
+          const address = await (window as any).freighter.getPublicKey();
+          return {
+            address,
+            walletName: "Freighter",
+            balanceXlm: "100.0",
+          };
+        }
+      } catch (e) {
+        console.warn("Freighter connection error:", e);
       }
-    } catch (e) {
-      console.warn("Freighter connection error:", e);
+    }
+
+    // 2. Albedo Web Auth
+    if (walletId === "albedo" && (window as any).albedo) {
+      try {
+        const res = await (window as any).albedo.publicKey({});
+        if (res && res.pubkey) {
+          return {
+            address: res.pubkey,
+            walletName: "Albedo",
+            balanceXlm: "100.0",
+          };
+        }
+      } catch (e) {
+        console.warn("Albedo connection error:", e);
+      }
+    }
+
+    // 3. xBull Extension
+    if (walletId === "xbull" && (window as any).xBullSDK) {
+      try {
+        const address = await (window as any).xBullSDK.getPublicKey();
+        if (address) {
+          return {
+            address,
+            walletName: "xBull",
+            balanceXlm: "100.0",
+          };
+        }
+      } catch (e) {
+        console.warn("xBull connection error:", e);
+      }
+    }
+
+    // 4. Rabet Extension
+    if (walletId === "rabet" && (window as any).rabet) {
+      try {
+        const res = await (window as any).rabet.connect();
+        if (res && res.publicKey) {
+          return {
+            address: res.publicKey,
+            walletName: "Rabet",
+            balanceXlm: "100.0",
+          };
+        }
+      } catch (e) {
+        console.warn("Rabet connection error:", e);
+      }
     }
   }
 
@@ -93,17 +143,56 @@ export async function connectWalletProvider(walletId: WalletType): Promise<Conne
  * Sign transaction XDR with connected wallet.
  */
 export async function signWithWallet(xdr: string, walletName: string): Promise<string> {
-  if (typeof window !== "undefined" && (window as any).freighter && walletName === "Freighter") {
-    try {
-      const signed = await (window as any).freighter.signTransaction(xdr, {
-        network: env.stellarNetwork,
-        networkPassphrase: env.networkPassphrase,
-      });
-      return signed;
-    } catch (e) {
-      console.warn("Freighter signing error:", e);
+  if (typeof window !== "undefined") {
+    // Freighter
+    if (walletName === "Freighter" && (window as any).freighter) {
+      try {
+        return await (window as any).freighter.signTransaction(xdr, {
+          network: env.stellarNetwork,
+          networkPassphrase: env.networkPassphrase,
+        });
+      } catch (e) {
+        console.warn("Freighter signing error:", e);
+      }
+    }
+
+    // Albedo
+    if (walletName === "Albedo" && (window as any).albedo) {
+      try {
+        const res = await (window as any).albedo.tx({
+          xdr,
+          network: env.networkPassphrase,
+        });
+        if (res && res.signed_envelope_xdr) {
+          return res.signed_envelope_xdr;
+        }
+      } catch (e) {
+        console.warn("Albedo signing error:", e);
+      }
+    }
+
+    // xBull
+    if (walletName === "xBull" && (window as any).xBullSDK) {
+      try {
+        return await (window as any).xBullSDK.signXDR(xdr);
+      } catch (e) {
+        console.warn("xBull signing error:", e);
+      }
+    }
+
+    // Rabet
+    if (walletName === "Rabet" && (window as any).rabet) {
+      try {
+        const res = await (window as any).rabet.sign(xdr, env.stellarNetwork.toLowerCase());
+        if (res && res.xdr) {
+          return res.xdr;
+        }
+      } catch (e) {
+        console.warn("Rabet signing error:", e);
+      }
     }
   }
-  // Return the original XDR or signed payload
+
+  // Return original XDR if no wallet extension is hooked
   return xdr;
 }
