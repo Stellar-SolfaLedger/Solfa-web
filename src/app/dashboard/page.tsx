@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { FriendbotButton } from "@/components/pricing/FriendbotButton";
+import { JobHistoryTable } from "@/components/dashboard/JobHistoryTable";
 import { UserEntitlements } from "@/types";
 import { apiService } from "@/services/api";
 import { env } from "@/config/env";
@@ -144,7 +145,30 @@ export default function DashboardPage() {
               + New Transcription
             </Link>
           </div>
-          {/* Job History Table Component rendered here */}
+          <JobHistoryTable
+            jobs={[
+              {
+                id: "e579205a-8b4d-4dfd-ab77-167e9127d0ce",
+                user_address: mockAddress,
+                status: "completed",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                original_filename: "Amazing_Grace_Choir_Melody.wav",
+                duration_sec: 42.5,
+                credit_consumed: true,
+                result: {
+                  key: "G",
+                  mode: "major",
+                  tonic: "G Major",
+                  bpm: 110.0,
+                  time_signature: "3/4",
+                  confidences: { key: 0.95, tempo: 0.92, meter: 0.89 },
+                  measures: [],
+                  solfa_text: "| s, : d : - | m.r : d : - ||",
+                },
+              },
+            ]}
+          />
         </div>
       </main>
 
