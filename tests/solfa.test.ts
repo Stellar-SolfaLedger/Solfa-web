@@ -2,6 +2,16 @@ import { checkAccountTrustline } from "../src/stellar/trustline";
 import { SUPPORTED_TOKENS, SUBSCRIPTION_PLANS } from "../src/config/stellar";
 
 describe("SolfaLedger Web Configuration and Trustlines", () => {
+  beforeAll(() => {
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ balances: [] }),
+      })
+    ) as any;
+  });
+
   test("Native XLM asset does not require a trustline", async () => {
     const res = await checkAccountTrustline(
       "GCATRF5LE7EWYOA55FIDRDB2UR76NYXOQ4CINGCTAD5RSGJODAGPQA7J",
