@@ -1,12 +1,21 @@
+import { Navbar } from "@/components/Navbar";
+import { Hero } from "@/components/landing/Hero";
+import { Features } from "@/components/landing/Features";
+import { SolfaScalePlayer } from "@/components/landing/SolfaScalePlayer";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { Footer } from "@/components/Footer";
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 text-center">
-      <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl text-white">
-        SolfaLedger
-      </h1>
-      <p className="mt-4 text-xl text-gray-400">
-        Audio-to-Tonic-Solfa transcription on Stellar Soroban.
-      </p>
-    </main>
+    <div className="min-h-screen flex flex-col bg-gray-950 text-white selection:bg-indigo-500 selection:text-white">
+      <Navbar />
+      <main className="flex-1">
+        <Hero />
+        <SolfaScalePlayer />
+        <Features />
+        <HowItWorks />
+      </main>
+      <Footer />
+    </div>
   );
 }
